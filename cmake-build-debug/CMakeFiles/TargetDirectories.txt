@@ -1,0 +1,3 @@
+D:/Git/Pair War/cmake-build-debug/CMakeFiles/edit_cache.dir
+D:/Git/Pair War/cmake-build-debug/CMakeFiles/Pair_War.dir
+D:/Git/Pair War/cmake-build-debug/CMakeFiles/rebuild_cache.dir
