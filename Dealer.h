@@ -13,7 +13,7 @@ public:
 
     }
 
-    void shuffle_deck(Deck);
+    void shuffle_deck();
 
 private:
 
