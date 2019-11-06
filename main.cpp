@@ -22,12 +22,18 @@ struct Card{
     struct Card* prev;
 };
 
+
 pthread_mutex_t dealer_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t player1_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t player2_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t player3_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 list <int> deck;
+int deck[] = {2, 3, 4, 5, 6, 7, 8, 9, 10, JACK, QUEEN, KING, ACE,  // diamonds
+              2, 3, 4, 5, 6, 7, 8, 9, 10, JACK, QUEEN, KING, ACE,  // clubs
+              2, 3, 4, 5, 6, 7, 8, 9, 10, JACK, QUEEN, KING, ACE,  // hearts
+              2, 3, 4, 5, 6, 7, 8, 9, 10, JACK, QUEEN, KING, ACE}; // spades
+>>>>>>> 852e99c5f672bdb997182327022179b286dc58f3
 
 int main() {
     setup();
