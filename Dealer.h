@@ -14,7 +14,7 @@ public:
     }
 
     void *shuffle_deck(void *){
-
+        return nullptr;
     }
 
 private:

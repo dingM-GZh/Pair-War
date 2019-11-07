@@ -9,16 +9,15 @@
 class Player {
 
 public:
-    Player(){
-
-    }
-
     void draw_card();
     void discard();
 
-    void get_card(int card) {
+    void set_card(int card) {
         this->card = card;
+    }
 
+    int get_card(){
+       return this->card;
     }
 private:
     int card;

@@ -40,16 +40,18 @@ pthread_t dealer;
 pthread_t players[3];
 
 Player player1;
+Player player2;
+Player player3;
 
-ofstream fout;
+ofstream fout("pair_war.txt");
 vector <int> deck;
 stack <int> shuffle;
-
 
 int main() {
 
     init();
 
+    //fout.open();
     cout << endl;
     stack2deck();
 
@@ -57,13 +59,16 @@ int main() {
     pthread_join(dealer, NULL);
 
     end();
+    fout << "poop";
 
+    fout.close();
     return 0;
 }
 
 void init() {
     deck_setup();
-    fout.open("pair_war.log");
+    //fout.open("pair_war.txt");
+    //cout << "created fout" << endl << endl;
     srand(time(NULL));
 
     pthread_mutex_init(&dealer_mutex, NULL);
@@ -81,7 +86,6 @@ void display_deck() {
     cout << "Display deck as vector" << endl;
     for (auto i = deck.begin(); i != deck.end(); i++)
         cout << '\t' << *i << endl;
-
     cout << endl;
 }
 
@@ -112,9 +116,11 @@ void *dealer_moves(void *){
     int top_card;
     shuffle_deck();
     top_card = shuffle.top();
-    player1.get_card(top_card);
+    player1.set_card(top_card);
     deck.push_back(top_card);
     shuffle.top();
+    cout << "PLAYER 1: draws "  << player1.get_card();
+    fout << "PLAYER 1: draws "  << player1.get_card();
 
     return NULL;
 }
