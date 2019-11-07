@@ -15,8 +15,13 @@ public:
 
     void draw_card();
     void discard();
+
+    void get_card(int card) {
+        this->card = card;
+
+    }
 private:
-    int number;
+    int card;
 
 };
 

@@ -13,7 +13,9 @@ public:
 
     }
 
-    void shuffle_deck();
+    void *shuffle_deck(void *){
+
+    }
 
 private:
 

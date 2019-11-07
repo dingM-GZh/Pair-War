@@ -4,6 +4,8 @@
 #include <iterator>
 #include <pthread.h>
 #include <time.h>
+#include <fstream>
+#include "Player.h"
 
 using namespace std;
 
@@ -14,45 +16,65 @@ using namespace std;
 #define ACE 14
 
 void *poop(void *); // delete this when done
+void *dealer_moves(void *);
 
+void init();
+void end();
 void display_deck();
-
-void setup();
+void deck_setup();
 void shuffle_deck();
 void show_stack();
 void stack2deck();
 
-struct Card{
-    int value;
-    struct Card* next;
-    struct Card* prev;
+struct temp_player{
+    int card;
 };
 
 pthread_mutex_t dealer_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t player1_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t player2_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t player3_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t players_mutex;
 
-pthread_t dealer, player1, player2, player3;
+pthread_t dealer;
+pthread_t players[3];
 
+Player player1;
+
+ofstream fout;
 vector <int> deck;
 stack <int> shuffle;
 
+
 int main() {
-    srand(time(NULL));
-    setup();
-    display_deck();
-    shuffle_deck();
-    display_deck();
 
+    init();
+
+    cout << endl;
     stack2deck();
-    display_deck();
 
-    pthread_create(&dealer, NULL, poop, NULL);
+    pthread_create(&dealer, NULL, dealer_moves, NULL);
     pthread_join(dealer, NULL);
-    exit(0);
+
+    end();
 
     return 0;
+}
+
+void init() {
+    deck_setup();
+    fout.open("pair_war.log");
+    srand(time(NULL));
+
+    pthread_mutex_init(&dealer_mutex, NULL);
+    pthread_mutex_init(&players_mutex, NULL);
+}
+
+void end() {
+    pthread_mutex_destroy(&dealer_mutex);
+    pthread_mutex_destroy(&players_mutex);
+    pthread_exit(0);
+    //exit(0);
 }
 
 void display_deck() {
@@ -63,7 +85,7 @@ void display_deck() {
     cout << endl;
 }
 
-void setup() {
+void deck_setup() {
     for (int i = 0; i < 4; i++) {
         deck.push_back(2);
         deck.push_back(3);
@@ -86,10 +108,20 @@ void *poop(void *pee){
     return NULL;
 }
 
+void *dealer_moves(void *){
+    int top_card;
+    shuffle_deck();
+    top_card = shuffle.top();
+    player1.get_card(top_card);
+    deck.push_back(top_card);
+    shuffle.top();
+
+    return NULL;
+}
+
 void shuffle_deck() {
-    int random;
+    int random, counter = 0;
     vector<int>::iterator it;
-int counter = 0;
     cout << "shuffle_deck" << endl;
     while (!deck.empty()){
         random = rand() % deck.size();
@@ -98,7 +130,7 @@ int counter = 0;
         it = deck.begin() + random;
         deck.erase(it);
 
-        cout << counter << endl;
+        //cout << counter << endl;
         counter ++;
     }
 }
@@ -111,10 +143,10 @@ void stack2deck(){
     int card, counter = 0;
     cout << "stack2deck" << endl;
      while (!shuffle.empty()) {
-         cout << counter << endl;
-         //card = shuffle.top();
+         card = shuffle.top();
          deck.push_back(shuffle.top()); //card);
          shuffle.pop();
+         //cout << counter << endl;
          counter++;
      }
     cout << endl;
