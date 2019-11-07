@@ -33,13 +33,10 @@ pthread_mutex_t player1_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t player2_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t player3_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+pthread_t dealer, player1, player2, player3;
+
 vector <int> deck;
 stack <int> shuffle;
-
-int dekko[] = {2, 3, 4, 5, 6, 7, 8, 9, 10, JACK, QUEEN, KING, ACE,  // diamonds
-              2, 3, 4, 5, 6, 7, 8, 9, 10, JACK, QUEEN, KING, ACE,  // clubs
-              2, 3, 4, 5, 6, 7, 8, 9, 10, JACK, QUEEN, KING, ACE,  // hearts
-              2, 3, 4, 5, 6, 7, 8, 9, 10, JACK, QUEEN, KING, ACE}; // spades
 
 int main() {
     srand(time(NULL));
@@ -51,7 +48,6 @@ int main() {
     stack2deck();
     display_deck();
 
-    pthread_t dealer, player1, player2, player3;
     pthread_create(&dealer, NULL, poop, NULL);
     pthread_join(dealer, NULL);
     exit(0);
@@ -59,24 +55,11 @@ int main() {
     return 0;
 }
 
-/*
-void display_deck() {
-    list <int> :: iterator it;
-    for(it = deck.begin(); it != deck.end(); ++it) {
-        cout << '\t' << *it;
-
-        if (*it == ACE)
-            cout << endl;
-    }
-    cout << '\n';
-}
- */
-
 void display_deck() {
     cout << "Display deck as vector" << endl;
-    for (auto i = deck.begin(); i != deck.end(); i++) {
+    for (auto i = deck.begin(); i != deck.end(); i++)
         cout << '\t' << *i << endl;
-    }
+
     cout << endl;
 }
 
@@ -116,7 +99,6 @@ int counter = 0;
         deck.erase(it);
 
         cout << counter << endl;
-        //display_deck();
         counter ++;
     }
 }
