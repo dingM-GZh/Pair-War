@@ -43,7 +43,7 @@ Player player1;
 Player player2;
 Player player3;
 
-ofstream fout("pair_war.txt");
+
 vector <int> deck;
 stack <int> shuffle;
 
@@ -59,8 +59,9 @@ int main() {
     pthread_join(dealer, NULL);
 
     end();
+    ofstream fout("pair_war.txt");
     fout << "poop";
-
+    fout.flush();
     fout.close();
     return 0;
 }
@@ -120,7 +121,7 @@ void *dealer_moves(void *){
     deck.push_back(top_card);
     shuffle.top();
     cout << "PLAYER 1: draws "  << player1.get_card();
-    fout << "PLAYER 1: draws "  << player1.get_card();
+    //fout << "PLAYER 1: draws "  << player1.get_card();
 
     return NULL;
 }
