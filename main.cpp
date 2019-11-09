@@ -1,6 +1,7 @@
 #include <iostream>
-#include <vector>
+#include <queue>
 #include <stack>
+#include <queue>
 #include <iterator>
 #include <pthread.h>
 #include <time.h>
@@ -26,6 +27,8 @@ void shuffle_deck();
 void show_stack();
 void stack2deck();
 
+void deal_process(Player);
+
 struct temp_player{
     int card;
 };
@@ -43,7 +46,7 @@ Player player1;
 Player player2;
 Player player3;
 
-
+ofstream fout;
 vector <int> deck;
 stack <int> shuffle;
 
@@ -51,25 +54,20 @@ int main() {
 
     init();
 
-    //fout.open();
-    cout << endl;
-    stack2deck();
+    //stack2deck();
 
     pthread_create(&dealer, NULL, dealer_moves, NULL);
     pthread_join(dealer, NULL);
 
     end();
-    ofstream fout("pair_war.txt");
-    fout << "poop";
-    fout.flush();
-    fout.close();
+
     return 0;
 }
 
 void init() {
     deck_setup();
-    //fout.open("pair_war.txt");
-    //cout << "created fout" << endl << endl;
+    fout.open("pair_war log.txt");
+    fout << "PAIR WAR - LOG FILE" << endl << endl;
     srand(time(NULL));
 
     pthread_mutex_init(&dealer_mutex, NULL);
@@ -80,7 +78,9 @@ void end() {
     pthread_mutex_destroy(&dealer_mutex);
     pthread_mutex_destroy(&players_mutex);
     pthread_exit(0);
-    //exit(0);
+
+    fout.flush();
+    fout.close();
 }
 
 void display_deck() {
@@ -114,14 +114,15 @@ void *poop(void *pee){
 }
 
 void *dealer_moves(void *){
-    int top_card;
     shuffle_deck();
-    top_card = shuffle.top();
-    player1.set_card(top_card);
-    deck.push_back(top_card);
-    shuffle.top();
-    cout << "PLAYER 1: draws "  << player1.get_card();
-    //fout << "PLAYER 1: draws "  << player1.get_card();
+
+    pthread_mutex_lock(&dealer_mutex);
+    deal_process(player1);
+
+
+
+
+    pthread_mutex_unlock(&dealer_mutex);
 
     return NULL;
 }
@@ -129,8 +130,9 @@ void *dealer_moves(void *){
 void shuffle_deck() {
     int random, counter = 0;
     vector<int>::iterator it;
-    cout << "shuffle_deck" << endl;
-    while (!deck.empty()){
+    cout << "shuffle_deck - in progress" << endl;
+
+    while (!deck.empty()) {
         random = rand() % deck.size();
 
         shuffle.push(deck.at(random));
@@ -140,10 +142,14 @@ void shuffle_deck() {
         //cout << counter << endl;
         counter ++;
     }
+    cout << "shuffle_deck - completed" << endl
+         << endl;
 }
 
 void show_stack() {
-    //
+    for (int i = 0; i < shuffle.size(); i++) {
+        cout << shuffle.top() + 1 << "\t";
+    }
 }
 
 void stack2deck(){
@@ -157,4 +163,19 @@ void stack2deck(){
          counter++;
      }
     cout << endl;
+}
+
+void deal_process(Player player) {
+    int top_card = shuffle.top(); //
+
+    player.set_card(top_card);
+    deck.push_back(top_card);
+
+    cout << "DEALER: PLAYER 1 is dealt " << top_card << endl << endl;
+    fout << "DEALER: PLAYER 1 is dealt " << top_card << endl << endl;
+
+    cout << "PLAYER 1: hand "  << top_card << endl;
+    fout << "PLAYER 1: hand "  << top_card << endl;
+
+    shuffle.pop(); // takes top card off stack
 }
