@@ -37,7 +37,7 @@ pthread_mutex_t dealer_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t player1_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t player2_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t player3_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t players_mutex;
+pthread_mutex_t players_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 pthread_t dealer;
 pthread_t players[3];
@@ -45,10 +45,13 @@ pthread_t players[3];
 Player player1;
 Player player2;
 Player player3;
+Player player[3];
 
 ofstream fout;
 vector <int> deck;
 stack <int> shuffle;
+int current_player, current_round, rounds;
+bool pair_found = false;
 
 int main() {
 
@@ -69,6 +72,10 @@ void init() {
     fout.open("pair_war log.txt");
     fout << "PAIR WAR - LOG FILE" << endl << endl;
     srand(time(NULL));
+
+    player1.set_name("PLAYER 1");
+    player2.set_name("PLAYER 2");
+    player3.set_name("PLAYER 3");
 
     pthread_mutex_init(&dealer_mutex, NULL);
     pthread_mutex_init(&players_mutex, NULL);
@@ -108,19 +115,21 @@ void deck_setup() {
     }
 }
 
-void *poop(void *pee){
+void *poop(void *pee) {
     cout << "deez nuts 1" << endl << endl;
     return NULL;
 }
 
-void *dealer_moves(void *){
+void *dealer_moves(void *) {
+    pthread_mutex_lock(&dealer_mutex);
     shuffle_deck();
 
-    pthread_mutex_lock(&dealer_mutex);
+    cout << "DEALER: shuffles deck" << endl;
+    fout << "DEALER: shuffles deck" << endl;
+
     deal_process(player1);
-
-
-
+    deal_process(player2);
+    deal_process(player3);
 
     pthread_mutex_unlock(&dealer_mutex);
 
@@ -152,7 +161,7 @@ void show_stack() {
     }
 }
 
-void stack2deck(){
+void stack2deck() {
     int card, counter = 0;
     cout << "stack2deck" << endl;
      while (!shuffle.empty()) {
@@ -166,16 +175,17 @@ void stack2deck(){
 }
 
 void deal_process(Player player) {
-    int top_card = shuffle.top(); //
+    int top_card = shuffle.top();
 
+    string name = player.get_name();
     player.set_card(top_card);
     deck.push_back(top_card);
 
-    cout << "DEALER: PLAYER 1 is dealt " << top_card << endl << endl;
-    fout << "DEALER: PLAYER 1 is dealt " << top_card << endl << endl;
+    //cout << "DEALER: " << name << " is dealt " << top_card << endl << endl;
+    //fout << "DEALER: " << name << " is dealt " << top_card << endl << endl;
 
-    cout << "PLAYER 1: hand "  << top_card << endl;
-    fout << "PLAYER 1: hand "  << top_card << endl;
+    cout << name << ": hand "  << top_card << endl;
+    fout << name << ": hand "  << top_card << endl;
 
     shuffle.pop(); // takes top card off stack
 }
