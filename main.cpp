@@ -16,7 +16,6 @@ using namespace std;
 #define KING 13
 #define ACE 14
 
-void *poop(void *); // delete this when done
 void *dealer_moves(void *);
 
 void init();
@@ -33,14 +32,17 @@ struct temp_player{
     int card;
 };
 
+pthread_t dealer;
+pthread_t players[3];
+
+pthread_cond_t  dealer_cond = PTHREAD_COND_INITIALIZER;
+pthread_cond_t  players_cond = PTHREAD_COND_INITIALIZER;
+
 pthread_mutex_t dealer_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t player1_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t player2_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t player3_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t players_mutex = PTHREAD_MUTEX_INITIALIZER;
-
-pthread_t dealer;
-pthread_t players[3];
 
 Player player1;
 Player player2;
@@ -54,11 +56,8 @@ int current_player, current_round, rounds;
 bool pair_found = false;
 
 int main() {
-
     init();
-
     //stack2deck();
-
     pthread_create(&dealer, NULL, dealer_moves, NULL);
     pthread_join(dealer, NULL);
 
@@ -67,6 +66,9 @@ int main() {
     return 0;
 }
 
+/***
+ * Operations to set up the program
+ */
 void init() {
     deck_setup();
     fout.open("pair_war log.txt");
@@ -81,6 +83,9 @@ void init() {
     pthread_mutex_init(&players_mutex, NULL);
 }
 
+/***
+ * Clean up after done
+ */
 void end() {
     pthread_mutex_destroy(&dealer_mutex);
     pthread_mutex_destroy(&players_mutex);
@@ -115,11 +120,6 @@ void deck_setup() {
     }
 }
 
-void *poop(void *pee) {
-    cout << "deez nuts 1" << endl << endl;
-    return NULL;
-}
-
 void *dealer_moves(void *) {
     pthread_mutex_lock(&dealer_mutex);
     shuffle_deck();
@@ -131,6 +131,7 @@ void *dealer_moves(void *) {
     deal_process(player2);
     deal_process(player3);
 
+    //pthread_cond_wait();
     pthread_mutex_unlock(&dealer_mutex);
 
     return NULL;
