@@ -1,11 +1,11 @@
 #include <iostream>
 #include <queue>
 #include <stack>
-#include <queue>
 #include <iterator>
 #include <pthread.h>
 #include <time.h>
 #include <fstream>
+#include <stdlib.h>
 #include "Player.h"
 
 using namespace std;
@@ -97,9 +97,10 @@ void end() {
 
 void display_deck() {
     cout << "Display deck as vector" << endl;
-    for (auto i = deck.begin(); i != deck.end(); i++)
-        cout << '\t' << *i << endl;
-    cout << endl;
+
+    for (int i = 0; i <= deck.size(); i++)
+        cout << deck[i] << '\t';
+    cout << endl << endl;
 }
 
 void deck_setup() {
@@ -139,6 +140,8 @@ void *dealer_moves(void *) {
 
 void shuffle_deck() {
     int random, counter = 0;
+
+
     vector<int>::iterator it;
     cout << "shuffle_deck - in progress" << endl;
 
@@ -152,6 +155,7 @@ void shuffle_deck() {
         //cout << counter << endl;
         counter ++;
     }
+    stack2deck();
     cout << "shuffle_deck - completed" << endl
          << endl;
 }
@@ -176,7 +180,7 @@ void stack2deck() {
 }
 
 void deal_process(Player player) {
-    int top_card = shuffle.top();
+    int top_card = deck.front();
 
     string name = player.get_name();
     player.set_card(top_card);
@@ -188,5 +192,7 @@ void deal_process(Player player) {
     cout << name << ": hand "  << top_card << endl;
     fout << name << ": hand "  << top_card << endl;
 
-    shuffle.pop(); // takes top card off stack
+    deck.erase(deck.begin());
+    display_deck();
+    //deck.pop(); // takes top card off stack
 }
