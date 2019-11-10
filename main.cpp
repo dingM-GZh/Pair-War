@@ -71,7 +71,7 @@ int main() {
  */
 void init() {
     deck_setup();
-    fout.open("pair_war log.txt");
+    fout.open("pair_war_log.txt");
     fout << "PAIR WAR - LOG FILE" << endl << endl;
     srand(time(NULL));
 
