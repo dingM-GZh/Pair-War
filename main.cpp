@@ -17,6 +17,8 @@ using namespace std;
 #define ACE 14
 
 void *dealer_moves(void *);
+void *player_moves( void *);
+void *square_moves(void *);
 
 void init();
 void end();
@@ -32,34 +34,41 @@ struct temp_player{
     int card;
 };
 
-pthread_t dealer;
-pthread_t players[3];
+pthread_t dealer_thread;
+pthread_t player1_thread;
+pthread_t player2_thread;
+pthread_t player3_thread;
+pthread_t players_thread[3];
 
 pthread_cond_t  dealer_cond = PTHREAD_COND_INITIALIZER;
 pthread_cond_t  players_cond = PTHREAD_COND_INITIALIZER;
 
 pthread_mutex_t dealer_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t players_mutex = PTHREAD_MUTEX_INITIALIZER;
+/*-------------------------------------------------------*/
 pthread_mutex_t player1_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t player2_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t player3_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t players_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 Player player1;
 Player player2;
 Player player3;
 Player player[3];
 
-ofstream fout;
 vector <int> deck;
 stack <int> shuffle;
+
+ofstream fout;
 int current_player, current_round, rounds;
 bool pair_found = false;
 
 int main() {
     init();
     //stack2deck();
-    pthread_create(&dealer, NULL, dealer_moves, NULL);
-    pthread_join(dealer, NULL);
+    pthread_create(&dealer_thread, NULL, dealer_moves, NULL);
+    pthread_create(&player1_thread, NULL, player_moves, NULL);
+    pthread_join(dealer_thread, NULL);
+    pthread_join(player1_thread, NULL);
 
     end();
 
@@ -138,26 +147,28 @@ void *dealer_moves(void *) {
     return NULL;
 }
 
+void *player_moves(void *) {
+
+}
+
+void *square_moves(void *) {
+    cout << "Square moves?" << endl << endl;
+    exit(1);
+}
+
 void shuffle_deck() {
-    int random, counter = 0;
-
-
-    vector<int>::iterator it;
+    int random;
     cout << "shuffle_deck - in progress" << endl;
 
     while (!deck.empty()) {
         random = rand() % deck.size();
 
         shuffle.push(deck.at(random));
-        it = deck.begin() + random;
-        deck.erase(it);
-
-        //cout << counter << endl;
-        counter ++;
+        deck.erase(deck.begin() + random);
     }
     stack2deck();
-    cout << "shuffle_deck - completed" << endl
-         << endl;
+    cout << "shuffle_deck - completed"
+         << endl << endl;
 }
 
 void show_stack() {
