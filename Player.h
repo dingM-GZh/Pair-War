@@ -2,6 +2,7 @@
 // Created by mbdin on 11/2/2019.
 //
 #include <iostream>
+#include <string>
 
 #ifndef PAIR_WAR_PLAYER_H
 #define PAIR_WAR_PLAYER_H
@@ -21,8 +22,8 @@ public:
        return this->card;
     }
 
-    void set_name(std::string name) {
-        this->name = name;
+    void set_name(int id) {
+        this->name = "PLAYER " + std::to_string(id);
     }
 
     std::string get_name() {
