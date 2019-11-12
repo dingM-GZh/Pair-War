@@ -1,15 +1,16 @@
 #include <iostream>
 #include <queue>
 #include <stack>
-#include <iterator>
 #include <pthread.h>
 #include <time.h>
 #include <fstream>
 #include <stdlib.h>
+#include <deque>
 #include "Player.h"
 
 using namespace std;
 
+#define MAX_ROUNDS 3
 #define DECK_SIZE 52
 #define JACK 11
 #define QUEEN 12
@@ -55,11 +56,11 @@ Player player2;
 Player player3;
 Player player[3];
 
-vector <int> deck;
+deque <int> deck;
 stack <int> shuffle;
 
 ofstream fout;
-int current_player, current_round, rounds;
+int current_player, current_round = 1;
 bool pair_found = false;
 
 int main() {
@@ -77,6 +78,9 @@ int main() {
 
 /***
  * Operations to set up the program
+ *     - open text file
+ *     - set names of players
+ *     - set ID nums of players
  */
 void init() {
     deck_setup();
@@ -105,10 +109,10 @@ void end() {
 }
 
 void display_deck() {
-    cout << "Display deck as vector" << endl;
+    cout << "Display deck" << endl;
 
-    for (int i = 0; i <= deck.size(); i++)
-        cout << deck[i] << '\t';
+    for (int i = 0; i < deck.size(); i++)
+        cout << deck[i] << ' ';
     cout << endl << endl;
 }
 
@@ -137,6 +141,8 @@ void *dealer_moves(void *) {
     cout << "DEALER: shuffles deck" << endl;
     fout << "DEALER: shuffles deck" << endl;
 
+    display_deck();
+
     deal_process(player1);
     deal_process(player2);
     deal_process(player3);
@@ -148,7 +154,16 @@ void *dealer_moves(void *) {
 }
 
 void *player_moves(void *) {
+    pthread_mutex_lock(&players_mutex);
+    int temp;
+    current_player = current_round;
 
+    while (!pair_found) {
+
+    }
+
+    pthread_mutex_unlock(&players_mutex);
+    return NULL;
 }
 
 void *square_moves(void *) {
@@ -195,7 +210,6 @@ void deal_process(Player player) {
 
     string name = player.get_name();
     player.set_card(top_card);
-    deck.push_back(top_card);
 
     //cout << "DEALER: " << name << " is dealt " << top_card << endl << endl;
     //fout << "DEALER: " << name << " is dealt " << top_card << endl << endl;
@@ -203,7 +217,11 @@ void deal_process(Player player) {
     cout << name << ": hand "  << top_card << endl;
     fout << name << ": hand "  << top_card << endl;
 
-    deck.erase(deck.begin());
+
+    deck.pop_front();
+
+    cout << deck.size() << endl;
+
     display_deck();
-    //deck.pop(); // takes top card off stack
+    //deck.pop_back(); // takes top card off stack
 }
