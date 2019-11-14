@@ -46,7 +46,10 @@ stack <int> shuffle;
 
 ofstream fout;
 /* Escape plan == pairs_found
- * roundOver == pair_found*/
+ * roundOver == pair_found
+ * Activeplayer & roundCounter == current round
+ * OR (activePlayer == current_player and roundCounter == current_round)
+ */
 int current_player = 0, current_round = 0, round_counter = 0, pairs_found = 0,
 esc_counter = 0, sig_count = 0;
 bool pair_found = false;
@@ -193,18 +196,19 @@ void shuffle_deck() {
 void *dealer_moves(void *) {
     while (round_counter < MAX_ROUNDS) {
         pthread_mutex_lock(&dealer_mutex);
-        shuffle_deck();
-
         cout << "DEALER: shuffles deck" << endl; /****************** delete when complete ******************/
         fout << "DEALER: shuffles deck" << endl;
+
+        shuffle_deck();
 
         pair_found = false;
 
         display_deck(); /****************** delete when complete ******************/
 
-        for (int i = 0; i < MAX_ROUNDS; i++) {
+        for (int i = 0; i < MAX_ROUNDS; i++) { // hands the first card to each player
             deal_process(players[i]);
         }
+        sig_count++;
 
         pthread_cond_signal(&players_cond[current_round]);
         pthread_cond_wait(&dealer_cond, &dealer_mutex);
