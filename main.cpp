@@ -21,22 +21,15 @@ void *dealer_moves(void *);
 void *player_moves(void *);
 void *square_moves(void *);
 
+void deal_process(Player&);
+bool compare_cards(Player, int);
+
 void initialise();
 void end();
 void display_deck();
 void print_deck();
 void deck_setup();
 void shuffle_deck();
-void show_stack();
-void stack2deck();
-
-bool compare_cards(Player, int);
-
-void deal_process(Player&);
-
-struct temp_player{
-    int card;
-};
 
 pthread_t dealer_thread;
 pthread_t players_thread[3];
@@ -46,18 +39,13 @@ pthread_cond_t  players_cond[3] = {PTHREAD_COND_INITIALIZER};
 
 pthread_mutex_t dealer_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t players_mutex = PTHREAD_MUTEX_INITIALIZER;
-/*-------------------------------------------------------*/
-pthread_mutex_t player1_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t player2_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t player3_mutex = PTHREAD_MUTEX_INITIALIZER;
-
 
 Player players[3];
 deque <int> deck;
 stack <int> shuffle;
 
 ofstream fout;
-int current_player = 0, current_round = 0, hot_potato = 0;
+int current_player = 0, current_round = 0, round_counter = 0, pairs_found = 0;
 bool pair_found = false;
 
 /***
@@ -69,6 +57,8 @@ int main() {
 
     pthread_create(&dealer_thread, NULL, dealer_moves, NULL);
     //_sleep(1);
+
+    // thread player_id is same as the index of the player_thread being created
     pthread_create(&players_thread[0], NULL, player_moves, (void *) 0);
     pthread_create(&players_thread[1], NULL, player_moves, (void *) 1);
     pthread_create(&players_thread[2], NULL, player_moves, (void *) 2);
@@ -170,8 +160,8 @@ void deck_setup() {
  */
 void shuffle_deck() {
     int random;
-    cout << "shuffle_deck - in progress" << endl;
-    cout << deck.size() << "\t";
+    cout << "shuffle_deck - in progress" << endl; /****************** delete when complete ******************/
+         << deck.size() << "\t"; /****************** delete when complete ******************/
 
     while (!deck.empty()) {
         random = rand() % deck.size();
@@ -182,28 +172,15 @@ void shuffle_deck() {
     }
     cout << endl;
 
-    cout << "stack2deck" << endl;
+    cout << "stack2deck" << endl /****************** delete when complete ******************/
     while (!shuffle.empty()) {
-        //card = shuffle.top();
-        deck.push_back(shuffle.top()); //card);
+        // card = shuffle.top();
+        deck.push_back(shuffle.top());
         shuffle.pop();
-        //cout << counter << endl;
+        // cout << counter << endl;
     }
-    cout << "shuffle_deck - completed"
-         << endl << endl;
-}
-
-/***
- * Taking cards from stack and placing them back into the deque
- */
-void stack2deck() {
-    cout << "stack2deck" << endl;
-    while (!shuffle.empty()) {
-        //card = shuffle.top();
-        deck.push_back(shuffle.top()); //card);
-        shuffle.pop();
-        //cout << counter << endl;
-    }
+    cout << "shuffle_deck - completed" /****************** delete when complete ******************/
+         << endl << endl; /****************** delete when complete ******************/
 }
 
 /***
@@ -211,24 +188,28 @@ void stack2deck() {
  * @return NULL because the pointer isn't connected to anything
  */
 void *dealer_moves(void *) {
-    pthread_mutex_lock(&dealer_mutex);
-    shuffle_deck();
+    while (round_counter < MAX_ROUNDS) {
+        pthread_mutex_lock(&dealer_mutex);
+        shuffle_deck();
 
-    cout << "DEALER: shuffles deck" << endl;
-    fout << "DEALER: shuffles deck" << endl;
+        cout << "DEALER: shuffles deck" << endl; /****************** delete when complete ******************/
+        fout << "DEALER: shuffles deck" << endl;
 
-    display_deck();
+        display_deck();
 
-    for (int i = 0; i < MAX_ROUNDS; i++) {
-        deal_process(players[i]);
+        for (int i = 0; i < MAX_ROUNDS; i++) {
+            deal_process(players[i]);
+        }
+
+        pthread_cond_signal(&players_cond[current_round]);
+        pthread_cond_wait(&dealer_cond, &dealer_mutex);
+        cout << "ending dealer moves" << endl; /****************** delete when complete ******************/
+
+        pthread_mutex_unlock(&dealer_mutex);
+
+        if (pairs_found == MAX_ROUNDS)
+            break;
     }
-
-    //pthread_cond_wait(&dealer_cond, &dealer_mutex);
-    pthread_cond_signal(&players_cond[current_round]);
-    pthread_cond_wait(&dealer_cond, &dealer_mutex);
-    cout << "ending dealer moves" << endl;
-
-    pthread_mutex_unlock(&dealer_mutex);
     return NULL;
 }
 
@@ -244,20 +225,20 @@ void *player_moves(void *player_id) {
     int temp = deck.front(); // the second that is to be drawn
     deck.pop_front(); // removes new card from top of deck
 
-    int id = *((int*)(&player_id));
-    Player thread_player = players[id]; // thread specific player;
+    int id = *((int*)(&player_id)); // recasting player_id back into integer
+    Player thread_player = players[id]; // temp player object relative to current thread
 
     if (current_round == id) {
-        cout << "player " << id << endl;
-        cout << thread_player.get_name() << ": draws " << temp << endl;
+        cout << "player " << id << endl; /****************** delete when complete ******************/
+        cout << thread_player.get_name() << ": draws " << temp << endl; /****************** delete when complete ******************/
         fout << thread_player.get_name() << ": draws " << temp << endl;
         pair_found = compare_cards(thread_player, temp);
 
         if (pair_found == false) {
-            cout << thread_player.get_name() << ": discard " << temp << endl;
+            cout << thread_player.get_name() << ": discard " << temp << endl; /****************** delete when complete ******************/
             fout << thread_player.get_name() << ": discard " << temp << endl;
             deck.push_back(temp);
-            display_deck();
+            display_deck(); /** delete when complete**/
             print_deck();
 
             pthread_cond_signal(&players_cond[id]);
@@ -268,7 +249,7 @@ void *player_moves(void *player_id) {
         //cout << "player 1" << endl;
     }
     else {
-        cout << "this is player " << id << endl;
+        cout << "this is player " << id << endl; /****************** delete when complete ******************/
     }
 
     //deck.push_back(temp);
@@ -319,16 +300,12 @@ void deal_process(Player &player) {
     string name = player.get_name(); // easy access to player name
     player.set_card(top_card); // assign the main card (doesn't change)
 
-    ////////////////////////////////////////////////////////
-    cout << name << ": hand "  << player.get_card() << endl; // delete when complete
-    ////////////////////////////////////////////////////////
-
+    cout << name << ": hand "  << player.get_card() << endl; /****************** delete when complete ******************/
     fout << name << ": hand "  << top_card << endl;
-    deck.pop_front(); // deletes card from top of deck
 
-    ////////////////////////////////////////////////////////
-    display_deck(); // delete when complete
-    ////////////////////////////////////////////////////////
+    deck.pop_front(); // removes card from top of deck
+
+    display_deck(); /****************** delete when complete ******************/
 }
 
 /***
@@ -338,10 +315,8 @@ void deal_process(Player &player) {
  * @return truth value of card comparison
  */
 bool compare_cards(Player player, int temp) {
-    ////////////////////////////////////////////////////////
-    cout << "compare_cards" << endl // delete when complete
-    << "card " << player.get_card() << "\t temp " << temp << endl; // delete when complete
-    ////////////////////////////////////////////////////////
+    cout << "compare_cards" << endl /****************** delete when complete ******************/
+         << "card " << player.get_card() << "\t temp " << temp << endl; /****************** delete when complete ******************/
 
     return (player.get_card() == temp);
 }
