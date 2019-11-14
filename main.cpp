@@ -45,7 +45,10 @@ deque <int> deck;
 stack <int> shuffle;
 
 ofstream fout;
-int current_player = 0, current_round = 0, round_counter = 0, pairs_found = 0;
+/* Escape plan == pairs_found
+ * roundOver == pair_found*/
+int current_player = 0, current_round = 0, round_counter = 0, pairs_found = 0,
+esc_counter = 0, sig_count = 0;
 bool pair_found = false;
 
 /***
@@ -160,7 +163,7 @@ void deck_setup() {
  */
 void shuffle_deck() {
     int random;
-    cout << "shuffle_deck - in progress" << endl; /****************** delete when complete ******************/
+    cout << "shuffle_deck - in progress" << endl /****************** delete when complete ******************/
          << deck.size() << "\t"; /****************** delete when complete ******************/
 
     while (!deck.empty()) {
@@ -172,7 +175,7 @@ void shuffle_deck() {
     }
     cout << endl;
 
-    cout << "stack2deck" << endl /****************** delete when complete ******************/
+    cout << "stack2deck" << endl; /****************** delete when complete ******************/
     while (!shuffle.empty()) {
         // card = shuffle.top();
         deck.push_back(shuffle.top());
@@ -195,7 +198,9 @@ void *dealer_moves(void *) {
         cout << "DEALER: shuffles deck" << endl; /****************** delete when complete ******************/
         fout << "DEALER: shuffles deck" << endl;
 
-        display_deck();
+        pair_found = false;
+
+        display_deck(); /****************** delete when complete ******************/
 
         for (int i = 0; i < MAX_ROUNDS; i++) {
             deal_process(players[i]);
@@ -207,7 +212,7 @@ void *dealer_moves(void *) {
 
         pthread_mutex_unlock(&dealer_mutex);
 
-        if (pairs_found == MAX_ROUNDS)
+        if (pairs_found >= MAX_ROUNDS)
             break;
     }
     return NULL;
@@ -219,65 +224,88 @@ void *dealer_moves(void *) {
  * @return NULL because the pointer isn't connected to anything
  */
 void *player_moves(void *player_id) {
-    pthread_mutex_lock(&players_mutex);
-    pthread_cond_wait(&players_cond[*((int*)(&player_id))], &players_mutex);
+    while (pairs_found < MAX_ROUNDS) {
+        pthread_mutex_lock(&players_mutex);
+        pthread_cond_wait(&players_cond[*((int *) (&player_id))], &players_mutex);
 
-    int temp = deck.front(); // the second that is to be drawn
-    deck.pop_front(); // removes new card from top of deck
+        int id = *((int *) (&player_id)); // recasting player_id back into integer
+        Player thread_player = players[id]; // temp player object relative to current thread
 
-    int id = *((int*)(&player_id)); // recasting player_id back into integer
-    Player thread_player = players[id]; // temp player object relative to current thread
-
-    if (current_round == id) {
-        cout << "player " << id << endl; /****************** delete when complete ******************/
-        cout << thread_player.get_name() << ": draws " << temp << endl; /****************** delete when complete ******************/
-        fout << thread_player.get_name() << ": draws " << temp << endl;
-        pair_found = compare_cards(thread_player, temp);
-
-        if (pair_found == false) {
-            cout << thread_player.get_name() << ": discard " << temp << endl; /****************** delete when complete ******************/
-            fout << thread_player.get_name() << ": discard " << temp << endl;
-            deck.push_back(temp);
-            display_deck(); /** delete when complete**/
-            print_deck();
-
-            pthread_cond_signal(&players_cond[id]);
+        if (pairs_found >= 3) {
+            if (esc_counter == 2) {
+                pthread_mutex_unlock(&players_mutex);
+                pthread_cond_signal(&dealer_cond);
+                break;
+            }
+            esc_counter++;
+            fout << thread_player.get_name() << ": round completed" << endl;
+            pthread_cond_signal(&players_cond[id + 1]);
+            pthread_mutex_unlock(&players_mutex);
+            break;
         }
-        else {
-            // stuff to terminate the program bc pair is found
+        if (!pair_found) { /* if a pair has not been found - round keeps going */
+            int temp = deck.front(); // the second that is to be drawn
+            /**  std::cout << "PLAYER " << ((long)currentPlayerIndex) + 1 << ": HAND " << players[((long)currentPlayerIndex)].hand  <<" " << temp<< std::endl; **/
+            deck.pop_front(); // removes new card from top of deck
+
+            //cout << "player " << id << endl; /****************** delete when complete ******************/
+            cout << thread_player.get_name() << ": draws " << temp << endl; /****************** delete when complete ******************/
+            cout << thread_player.get_name() << ": hand " << thread_player.get_card() << endl; /****************** delete when complete ******************/
+
+            fout << thread_player.get_name() << ": hand " << thread_player.get_card() << endl;
+            fout << thread_player.get_name() << ": draws " << temp << endl;
+            if (compare_cards(thread_player, temp)) {
+                cout << "WIN: YES" << endl;
+                pairs_found++;
+                fout << thread_player.get_name() << ": wins" << endl
+                     << thread_player.get_name() << ": round completed" << endl;
+                pair_found = true;
+            }
+            else {
+                cout << "WIN: NO" << endl;
+            }
         }
-        //cout << "player 1" << endl;
-    }
-    else {
-        cout << "this is player " << id << endl; /****************** delete when complete ******************/
-    }
 
-    //deck.push_back(temp);
-    //temp = deck.front();
+        else { /* if a pair has been found (i.o.w. the round is over) */
+            /** fout << "PLAYER " << ((long)currentPlayerIndex) + 1 << ": round completed" << std::endl; **/
+            sig_count++;
 
-    /***
-    if (*(int *) player_id == 1) {
-        //
-    }
-    else if (*(int *) player_id == 2) {
-        //
-    }
-    else if (*(int *) player_id == 3) {
-        //
-    }
-    else {
-        //
-    }*/
+            if (sig_count == 2) {
+                pthread_cond_signal(&dealer_cond);
+                pthread_mutex_unlock(&players_mutex);
+            }
+            else {
+                pthread_cond_signal(&players_cond[id + 1]);
+                pthread_mutex_unlock(&players_mutex);
+            }
+        }
 
 
-    /*
-    while (!pair_found) {
-        break;
-    } */
+/**
+        if (current_round == id) {
 
-    pthread_cond_signal(&dealer_cond);
-    cout << "ending player " << id << endl;
-    pthread_mutex_unlock(&players_mutex);
+
+            if (pair_found == false) {
+                cout << thread_player.get_name() << ": discard " << temp
+                     << endl; ****************** delete when complete ******************
+                fout << thread_player.get_name() << ": discard " << temp << endl;
+                deck.push_back(temp);
+                display_deck(); ** delete when complete**
+                print_deck();
+
+                pthread_cond_signal(&players_cond[id]);
+            } else {
+                // stuff to terminate the program bc pair is found
+            }
+            //cout << "player 1" << endl;
+        } else {
+            cout << "this is player " << id << endl; ****************** delete when complete ******************
+        }
+**/
+        pthread_cond_signal(&dealer_cond);
+        cout << "ending player " << id << endl;
+        pthread_mutex_unlock(&players_mutex);
+    }
     return NULL;
 }
 
