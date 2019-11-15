@@ -12,11 +12,6 @@ The results will be stored in a file called `pair_war.log`. The file can be open
 
 ## Log Files
 The log files made by final program are listed `pair_war_#.log`, where `#` can be replaced by any integer from 1 to 5. The seeds of each log file are, respectively:
-> 20
-> 11
-> 100
-> 5912
-> 583
+> 20, 11, 100, 5912, 583
 
 The `pair_war.log` has a seed of 12. 
-
