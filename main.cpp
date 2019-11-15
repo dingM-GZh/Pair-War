@@ -1,12 +1,10 @@
 #include <iostream>
-#include <queue>
 #include <stack>
 #include <pthread.h>
 #include <time.h>
 #include <fstream>
 #include <stdlib.h>
 #include <deque>
-#include <cstdint>
 #include "Player.h"
 
 using namespace std;
@@ -30,15 +28,14 @@ void display_deck();
 void print_deck();
 void deck_setup();
 void shuffle_deck();
+void discard_card(Player&, int&);
 
-pthread_t dealer_thread;
-pthread_t players_thread[3];
+pthread_t dealer_t,
+          players_t[3];
 
-pthread_cond_t  dealer_cond = PTHREAD_COND_INITIALIZER;
-pthread_cond_t  players_cond[3] = {PTHREAD_COND_INITIALIZER};
+pthread_cond_t  dealer_cond, players_cond[3];
 
-pthread_mutex_t dealer_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t players_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t dealer_mutex, players_mutex;
 
 Player players[3];
 deque <int> deck;
@@ -61,18 +58,18 @@ bool pair_found = false;
 int main() {
     initialise();
 
-    pthread_create(&dealer_thread, NULL, dealer_moves, NULL);
+    pthread_create(&dealer_t, NULL, dealer_moves, NULL);
     //_sleep(1);
 
     // thread player_id is same as the index of the player_thread being created
-    pthread_create(&players_thread[0], NULL, player_moves, (void *) 0);
-    pthread_create(&players_thread[1], NULL, player_moves, (void *) 1);
-    pthread_create(&players_thread[2], NULL, player_moves, (void *) 2);
+    pthread_create(&players_t[0], NULL, player_moves, (void *) 0);
+    pthread_create(&players_t[1], NULL, player_moves, (void *) 1);
+    pthread_create(&players_t[2], NULL, player_moves, (void *) 2);
 
-    pthread_join(dealer_thread, NULL);
-    pthread_join(players_thread[0],NULL);
-    pthread_join(players_thread[1],NULL);
-    pthread_join(players_thread[2],NULL);
+    pthread_join(dealer_t, NULL);
+    pthread_join(players_t[0],NULL);
+    pthread_join(players_t[1],NULL);
+    pthread_join(players_t[2],NULL);
 
     end();
     return 0;
@@ -194,21 +191,22 @@ void shuffle_deck() {
  * @return NULL because the pointer isn't connected to anything
  */
 void *dealer_moves(void *) {
-    while (round_counter < MAX_ROUNDS) {
+    while (current_round < MAX_ROUNDS + 1) {
         pthread_mutex_lock(&dealer_mutex);
         cout << "DEALER: shuffles deck" << endl; /****************** delete when complete ******************/
         fout << "DEALER: shuffles deck" << endl;
 
-        shuffle_deck();
-
         pair_found = false;
+        shuffle_deck();
 
         display_deck(); /****************** delete when complete ******************/
 
         for (int i = 0; i < MAX_ROUNDS; i++) { // hands the first card to each player
             deal_process(players[i]);
         }
-        sig_count++;
+        current_player = current_round;
+        current_round++;
+        sig_count = 0;
 
         pthread_cond_signal(&players_cond[current_round]);
         pthread_cond_wait(&dealer_cond, &dealer_mutex);
@@ -216,7 +214,7 @@ void *dealer_moves(void *) {
 
         pthread_mutex_unlock(&dealer_mutex);
 
-        if (pairs_found >= MAX_ROUNDS)
+        if (pairs_found == MAX_ROUNDS)
             break;
     }
     return NULL;
@@ -228,22 +226,23 @@ void *dealer_moves(void *) {
  * @return NULL because the pointer isn't connected to anything
  */
 void *player_moves(void *player_id) {
-    while (pairs_found < MAX_ROUNDS) {
+    while (current_round < MAX_ROUNDS + 1) {
         pthread_mutex_lock(&players_mutex);
         pthread_cond_wait(&players_cond[*((int *) (&player_id))], &players_mutex);
 
         int id = *((int *) (&player_id)); // recasting player_id back into integer
         Player thread_player = players[id]; // temp player object relative to current thread
 
-        if (pairs_found >= 3) {
-            if (esc_counter == 2) {
+        if (pairs_found >= MAX_ROUNDS) {
+            if (esc_counter == MAX_ROUNDS - 1) {
                 pthread_mutex_unlock(&players_mutex);
                 pthread_cond_signal(&dealer_cond);
                 break;
             }
             esc_counter++;
+            cout << thread_player.get_name() << ": round completed" << endl; /****************** delete when complete ******************/
             fout << thread_player.get_name() << ": round completed" << endl;
-            pthread_cond_signal(&players_cond[id + 1]);
+            pthread_cond_signal(&players_cond[(id + 1) % 3]);
             pthread_mutex_unlock(&players_mutex);
             break;
         }
@@ -267,9 +266,12 @@ void *player_moves(void *player_id) {
             }
             else {
                 cout << "WIN: NO" << endl;
+                discard_card(thread_player, temp);
             }
+            current_player = (current_player + 1) % 3;
+            display_deck(); //****************** delete when complete ******************//
+            print_deck();
         }
-
         else { /* if a pair has been found (i.o.w. the round is over) */
             /** fout << "PLAYER " << ((long)currentPlayerIndex) + 1 << ": round completed" << std::endl; **/
             sig_count++;
@@ -284,28 +286,6 @@ void *player_moves(void *player_id) {
             }
         }
 
-
-/**
-        if (current_round == id) {
-
-
-            if (pair_found == false) {
-                cout << thread_player.get_name() << ": discard " << temp
-                     << endl; ****************** delete when complete ******************
-                fout << thread_player.get_name() << ": discard " << temp << endl;
-                deck.push_back(temp);
-                display_deck(); ** delete when complete**
-                print_deck();
-
-                pthread_cond_signal(&players_cond[id]);
-            } else {
-                // stuff to terminate the program bc pair is found
-            }
-            //cout << "player 1" << endl;
-        } else {
-            cout << "this is player " << id << endl; ****************** delete when complete ******************
-        }
-**/
         pthread_cond_signal(&dealer_cond);
         cout << "ending player " << id << endl;
         pthread_mutex_unlock(&players_mutex);
@@ -351,4 +331,21 @@ bool compare_cards(Player player, int temp) {
          << "card " << player.get_card() << "\t temp " << temp << endl; /****************** delete when complete ******************/
 
     return (player.get_card() == temp);
+}
+
+void discard_card(Player &player, int &temp) {
+    int discard = rand() % 2;
+    if (discard == 1) {
+        deck.push_back(temp);
+        cout << player.get_name() << ": discard " << temp << endl; /****************** delete when complete ******************/
+        fout << player.get_name() << ": discard " << temp << endl;
+        temp = 0;
+    }
+    else {
+        deck.push_back(player.get_card());
+        cout << player.get_name() << ": discard " << player.get_card() << endl; /****************** delete when complete ******************/
+        fout << player.get_name() << ": discard " << player.get_card() << endl;
+        player.set_card(temp);
+    }
+
 }
